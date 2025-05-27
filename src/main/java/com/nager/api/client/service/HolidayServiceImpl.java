@@ -26,7 +26,8 @@ public class HolidayServiceImpl implements HolidayService {
 
     /**
      * This function will get holidays for current and previous year, then it will append those into a array and then
-     * get the index of array which is greater than current date. Then it will retrieve the last 3 celebrated holidays
+     * get the index of array which is greater than current date. Nager API sends the holidays in ascending date
+     * so we can combine the arrays directly. Then it will retrieve the last 3 celebrated holidays
      */
     @Override
     public Map<LocalDate, String> getLastThreeHolidays(String countryCode) {
@@ -57,16 +58,16 @@ public class HolidayServiceImpl implements HolidayService {
      */
     @Override
     public Map<String, List<Holiday>> getPublicHolidaysNotOnWeekendsForCountries(int year, String[] countryCodes){
-        Map<String, List<Holiday>> holidayCounts = new HashMap<>();
+        Map<String, List<Holiday>> allCountriesHolidays = new HashMap<>();
         for(String countryCode : countryCodes){
-            holidayCounts.put(countryCode, getPublicHolidaysNotOnWeekendsForOneCountry(year, countryCode));
+            allCountriesHolidays.put(countryCode, getPublicHolidaysNotOnWeekendsForOneCountry(year, countryCode));
         }
-        return holidayCounts;
+        return allCountriesHolidays;
     }
 
     /**
      * This function will get all the holidays of one country and then filter by Public type and non-weekend and
-     * then sort the list
+     * then sort the list in descending order
      */
     private List<Holiday> getPublicHolidaysNotOnWeekendsForOneCountry(int year, String countryCode){
         Holiday[] holidays = getHolidaysOfCountry(year, countryCode);
@@ -74,7 +75,7 @@ public class HolidayServiceImpl implements HolidayService {
             return null;
 
         return Arrays.stream(holidays).parallel()
-                .filter(holiday -> holiday.getTypes().contains("Public"))
+                .filter(holiday -> holiday.getTypes().contains(Constants.PUBLIC))
                 .filter(holiday -> !(holiday.getDate().getDayOfWeek() == DayOfWeek.SATURDAY ||
                         holiday.getDate().getDayOfWeek() == DayOfWeek.SUNDAY ))
                 .sorted((o1, o2) -> o2.getDate().compareTo(o1.getDate()))
@@ -82,7 +83,8 @@ public class HolidayServiceImpl implements HolidayService {
     }
 
     /**
-     * This function will get Arrays of holidays of each country then use a TreeMap for duplicate elimination and sorting
+     * This function will get Arrays of holidays of each country then use a TreeMap for duplicate elimination and
+     * natural sorting on LocalDate
      */
     @Override
     public TreeMap<LocalDate, String> getDeduplicatedListForCountries(Integer year, String countryCode1,
